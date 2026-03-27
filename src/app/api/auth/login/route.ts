@@ -14,18 +14,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Введите email и пароль' }, { status: 400 });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+    const user = await db.user.findUnique({ where: { email } });
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 });
     }
 
     // Принудительно обновляем роль в базе для тестового аккаунта
-    if (email === 'bennetsamp@gmail.com') {
-      db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+    if (email === 'bennetsamp@gmail.com' && user.role !== 'admin') {
+      await db.user.update({
+        where: { id: user.id },
+        data: { role: 'admin' }
+      });
       user.role = 'admin';
     }
-
     // Срок действия токена: 30 дней если "Запомнить меня", иначе 24 часа
     const expirationTime = rememberMe ? '30d' : '24h';
     const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;

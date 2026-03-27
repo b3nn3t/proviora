@@ -12,12 +12,14 @@ export async function GET(request: Request) {
     }
 
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(payload.userId) as any;
+    const user = await db.user.findUnique({
+      where: { id: payload.userId as number },
+      select: { id: true, name: true, email: true, role: true }
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 });
     }
-
     return NextResponse.json({ 
       success: true, 
       user: { id: user.id, name: user.name, email: user.email, role: user.role } 

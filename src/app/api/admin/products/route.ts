@@ -13,7 +13,10 @@ async function checkAdmin(request: Request) {
     if (!token) return false;
     const { payload } = await jwtVerify(token, SECRET_KEY);
     if (payload.role === 'admin') return true;
-    const user = db.prepare('SELECT role FROM users WHERE id = ?').get(payload.userId) as any;
+    const user = await db.user.findUnique({
+      where: { id: payload.userId as number },
+      select: { role: true }
+    });
     return user?.role === 'admin';
   } catch (e) {
     return false;
@@ -22,7 +25,9 @@ async function checkAdmin(request: Request) {
 
 export async function GET(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+  const products = await db.product.findMany({
+    orderBy: { createdAt: 'desc' }
+  });
   return NextResponse.json(products);
 }
 
@@ -48,9 +53,17 @@ export async function POST(request: Request) {
       imageUrl = `/uploads/${filename}`;
     }
 
-    db.prepare('INSERT INTO products (name, price, category, is_bestseller, description, image_url, stock) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      name, price, category, is_bestseller, description, imageUrl, stock
-    );
+    await db.product.create({
+      data: {
+        name,
+        price,
+        category,
+        isBestseller: is_bestseller,
+        description,
+        imageUrl,
+        stock
+      }
+    });
     return NextResponse.json({ success: true });  } catch (error) {
     return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
   }
@@ -60,7 +73,7 @@ export async function PATCH(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   try {
     const formData = await request.formData();
-    const id = formData.get('id') as string;
+    const id = parseInt(formData.get('id') as string);
     const name = formData.get('name') as string;
     const price = formData.get('price') as string;
     const category = formData.get('category') as string;
@@ -69,8 +82,11 @@ export async function PATCH(request: Request) {
     const stock = parseInt(formData.get('stock') as string) || 0;
     const image = formData.get('image') as File | null;
 
-    const currentProduct = db.prepare('SELECT image_url FROM products WHERE id = ?').get(id) as any;
-    let imageUrl = currentProduct?.image_url;
+    const currentProduct = await db.product.findUnique({
+      where: { id },
+      select: { imageUrl: true }
+    });
+    let imageUrl = currentProduct?.imageUrl;
 
     if (image && image.size > 0) {
       const bytes = await image.arrayBuffer();
@@ -81,9 +97,18 @@ export async function PATCH(request: Request) {
       imageUrl = `/uploads/${filename}`;
     }
 
-    db.prepare('UPDATE products SET name = ?, price = ?, category = ?, is_bestseller = ?, description = ?, image_url = ?, stock = ? WHERE id = ?').run(
-      name, price, category, is_bestseller, description, imageUrl, stock, id
-    );
+    await db.product.update({
+      where: { id },
+      data: {
+        name,
+        price,
+        category,
+        isBestseller: is_bestseller,
+        description,
+        imageUrl,
+        stock
+      }
+    });
     return NextResponse.json({ success: true });  } catch (error) {
     return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
   }
@@ -92,6 +117,8 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const { id } = await request.json();
-  db.prepare('DELETE FROM products WHERE id = ?').run(id);
+  await db.product.delete({
+    where: { id: parseInt(id) }
+  });
   return NextResponse.json({ success: true });
 }
