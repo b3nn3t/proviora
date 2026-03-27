@@ -4,13 +4,15 @@ import { motion } from "framer-motion";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
 import { useCart } from "@/lib/store/useCart";
+
+import { useToast } from "@/lib/store/useToast";
 
 export default function Bestsellers() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const { addToast } = useToast();
   useEffect(() => {
     const fetchBestsellers = async () => {
       try {
@@ -79,15 +81,18 @@ export default function Bestsellers() {
                     {product.name[0]}
                   </div>
                 )}
-                {/* Overlay with button */}
+                
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 flex items-end p-6">
                   <button 
-                    onClick={() => addItem(product)}
+                    onClick={() => {
+                      addItem(product);
+                      addToast("Товар добавлен в корзину");
+                    }}
                     className="w-full py-3 bg-white text-[#243A5E] rounded-xl shadow-xl opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 font-bold text-xs uppercase tracking-widest hover:bg-[#243A5E] hover:text-white"
                   >
                     В корзину
-                  </button>
-                </div>
+                  </button>                </div>
+
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter shadow-sm">
                   Best Seller
                 </div>
@@ -104,15 +109,9 @@ export default function Bestsellers() {
                 <h3 className="font-medium text-lg leading-tight group-hover:text-[#d4af37] transition-colors">
                   {product.name}
                 </h3>
-                <p className="text-[10px] font-bold">
-                  {product.stock > 0 ? (
-                    <span className="text-green-500">В наличии: {product.stock} шт.</span>
-                  ) : (
-                    <span className="text-red-500">Нет в наличии</span>
-                  )}
-                </p>
                 <p className="font-bold text-xl">{product.price}</p>
-              </div>            </motion.div>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>

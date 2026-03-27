@@ -5,7 +5,9 @@ import { Filter, ChevronDown, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/store/useCart";
 
-const categories = ["Все товары", "БАДы", "Уход за кожей", "Витамины", "Наборы"];
+const categories = ["Все товары", "Уход за кожей", "Витамины/Нутриенты", "Наборы"];
+
+import { useToast } from "@/lib/store/useToast";
 
 export default function CatalogGrid() {
   const [products, setProducts] = useState<any[]>([]);
@@ -13,7 +15,7 @@ export default function CatalogGrid() {
   const [selectedCategory, setSelectedCategory] = useState("Все товары");
   const [maxPrice, setMaxPrice] = useState(10000000);
   const { addItem } = useCart();
-
+  const { addToast } = useToast();
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -46,12 +48,12 @@ export default function CatalogGrid() {
     <div className="bg-white min-h-screen text-[#243A5E]">
       <div className="border-b border-gray-200 sticky top-20 bg-white z-30">
         <div className="container mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-4 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+          <div className="flex items-center space-x-4 overflow-x-auto pb-2 md:pb-0 no-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full border text-sm whitespace-nowrap transition-all ${
+                className={`px-4 py-2 rounded-full border text-xs md:text-sm whitespace-nowrap transition-all ${
                   selectedCategory === cat 
                     ? "bg-[#243A5E] text-white border-[#243A5E]" 
                     : "border-gray-200 hover:border-[#243A5E]"
@@ -62,17 +64,16 @@ export default function CatalogGrid() {
             ))}
           </div>
           
-          <div className="flex items-center space-x-6">
-            <button className="flex items-center space-x-2 text-sm font-medium">
-              <Filter size={18} />
+          <div className="flex items-center space-x-4 md:space-x-6">
+            <button className="flex items-center space-x-2 text-xs md:text-sm font-medium">
+              <Filter size={16} className="md:w-[18px] md:h-[18px]" />
               <span>Фильтры</span>
             </button>
-            <button className="flex items-center space-x-2 text-sm font-medium">
+            <button className="flex items-center space-x-2 text-xs md:text-sm font-medium">
               <span>Сортировка</span>
-              <ChevronDown size={18} />
+              <ChevronDown size={16} className="md:w-[18px] md:h-[18px]" />
             </button>
-          </div>
-        </div>
+          </div>        </div>
       </div>
 
       <div className="container mx-auto px-6 py-12">
@@ -150,12 +151,14 @@ export default function CatalogGrid() {
                           </div>
                         )}
                         <button 
-                          onClick={() => addItem(product)}
+                          onClick={() => {
+                            addItem(product);
+                            addToast("Товар добавлен в корзину");
+                          }}
                           className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 hover:bg-[#243A5E] hover:text-white"
                         >
                           +
-                        </button>
-                        {product.is_bestseller === 1 && (
+                        </button>                        {product.is_bestseller === 1 && (
                           <div className="absolute top-4 left-4 bg-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tighter shadow-sm">
                             Best Seller
                           </div>
@@ -172,20 +175,14 @@ export default function CatalogGrid() {
                           {product.name}
                         </h3>
                         <p className="text-xs text-gray-400">{product.category}</p>
-                        <p className="text-[10px] font-bold mt-1">
-                          {product.stock > 0 ? (
-                            <span className="text-green-500">В наличии: {product.stock} шт.</span>
-                          ) : (
-                            <span className="text-red-500">Нет в наличии</span>
-                          )}
-                        </p>
                         <p className="font-bold mt-2">{product.price}</p>
-                      </div>
-                      
+                      </div>                      
                       <button 
-                        onClick={() => addItem(product)}
-                        disabled={product.stock <= 0}
-                        className={`mt-4 w-full py-2 border rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
+                        onClick={() => {
+                          addItem(product);
+                          addToast("Товар добавлен в корзину");
+                        }}
+                        disabled={product.stock <= 0}                        className={`mt-4 w-full py-2 border rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
                           product.stock > 0 
                             ? "border-[#243A5E] hover:bg-[#243A5E] hover:text-white" 
                             : "border-gray-200 text-gray-300 cursor-not-allowed"

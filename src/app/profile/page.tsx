@@ -9,9 +9,11 @@ import PageTransition from "@/components/animations/PageTransition";
 import Modal from "@/components/ui/Modal";
 import { User, Package, Settings, LogOut, ChevronRight, ShieldCheck, Clock, Truck, CheckCircle2, Archive } from "lucide-react";
 
+import { useToast } from "@/lib/store/useToast";
+
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
+  const { addToast } = useToast();
+  const [user, setUser] = useState<any>(null);  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "orders">("profile");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -69,14 +71,14 @@ export default function ProfilePage() {
       if (res.ok) {
         setUser({ ...user, name: newName });
         setIsSettingsOpen(false);
+        addToast("Имя успешно обновлено");
       }
     } catch (err) {
-      console.error(err);
+      addToast("Ошибка при обновлении", "error");
     } finally {
       setUpdateLoading(false);
     }
   };
-
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });

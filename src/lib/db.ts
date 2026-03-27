@@ -79,8 +79,22 @@ const createInitialData = () => {
       'admin'
     );
   }
-};
 
+  // Добавление 10 тестовых пользователей
+  const testPassword = bcrypt.hashSync('123456', 10);
+  for (let i = 1; i <= 10; i++) {
+    const testEmail = `testuser${i}@gmail.com`;
+    const userExists = db.prepare('SELECT id FROM users WHERE email = ?').get(testEmail);
+    if (!userExists) {
+      db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
+        `Test User ${i}`,
+        testEmail,
+        testPassword,
+        'user'
+      );
+    }
+  }
+};
 createInitialData();
 
 export default db;

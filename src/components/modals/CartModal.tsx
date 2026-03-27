@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useToast } from "@/lib/store/useToast";
+
 export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, removeItem, updateQuantity, total, clearCart } = useCart();
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const { addToast } = useToast();
+  const [loading, setLoading] = useState(false);  const router = useRouter();
 
   const handleGoToProfile = () => {
     onClose();
@@ -22,7 +24,8 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
     }
   };
 
-  const handleCheckout = async () => {    if (items.length === 0) return;
+  const handleCheckout = async () => {
+    if (items.length === 0) return;
     setLoading(true);
     try {
       const res = await fetch("/api/orders", {
@@ -34,20 +37,19 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
         })
       });
       if (res.ok) {
-        alert("Заказ успешно оформлен!");
+        addToast("Заказ успешно оформлен!");
         clearCart();
         onClose();
       } else {
         const data = await res.json();
-        alert(data.error || "Ошибка при оформлении");
+        addToast(data.error || "Ошибка при оформлении", "error");
       }
     } catch (err) {
-      alert("Ошибка сети");
+      addToast("Ошибка сети", "error");
     } finally {
       setLoading(false);
     }
   };
-
   if (!isOpen) return null;
 
   return (
@@ -60,38 +62,39 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
         <motion.div 
           initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col"
+          className="relative w-full max-w-md h-full bg-[#f5e6be] shadow-2xl flex flex-col"
         >
-          <div className="p-6 border-b flex items-center justify-between">
+          <div className="p-6 border-b flex items-center justify-between bg-[#243A5E] text-white">
             <div className="flex items-center space-x-3">
-              <ShoppingBag className="text-[#243A5E]" />
-              <h2 className="text-xl font-bold text-[#243A5E]">Корзина</h2>
+              <ShoppingBag className="text-[#d4af37]" />
+              <h2 className="text-xl font-bold">Корзина</h2>
             </div>
             <div className="flex items-center space-x-2">
               {items.length > 0 && (
                 <button 
                   onClick={handleClearCart}
-                  className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
+                  className="p-2 text-red-400 hover:text-red-300 rounded-full transition-all"
                   title="Очистить корзину"
                 >
                   <Trash2 size={20} />
                 </button>
               )}
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <X size={24} className="text-[#243A5E]" />
+              <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X size={24} />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">            {items.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {items.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30 text-[#243A5E]">
                 <ShoppingBag size={64} />
                 <p className="text-lg font-medium">Ваша корзина пуста</p>
               </div>
             ) : (
               items.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4 group">
-                  <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                <div key={item.id} className="flex items-center space-x-4 group bg-white/50 p-4 rounded-2xl border border-[#243A5E]/5">
+                  <div className="w-20 h-20 bg-white rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
                     {item.image_url ? (
                       <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                     ) : (
@@ -106,14 +109,14 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
                     <div className="flex items-center space-x-3 mt-2">
                       <button 
                         onClick={() => updateQuantity(item.id, -1)}
-                        className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:border-[#243A5E] transition-colors"
+                        className="w-8 h-8 bg-white border border-[#243A5E]/10 rounded-lg flex items-center justify-center hover:border-[#243A5E] text-[#243A5E] transition-colors"
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
+                      <span className="text-sm font-bold w-4 text-center text-[#243A5E]">{item.quantity}</span>
                       <button 
                         onClick={() => updateQuantity(item.id, 1)}
-                        className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:border-[#243A5E] transition-colors"
+                        className="w-8 h-8 bg-white border border-[#243A5E]/10 rounded-lg flex items-center justify-center hover:border-[#243A5E] text-[#243A5E] transition-colors"
                       >
                         <Plus size={14} />
                       </button>
@@ -121,7 +124,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
                   </div>
                   <button 
                     onClick={() => removeItem(item.id)}
-                    className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                    className="p-2 text-[#243A5E]/20 hover:text-red-500 transition-colors"
                   >
                     <X size={20} />
                   </button>
@@ -131,7 +134,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
           </div>
 
           {items.length > 0 && (
-            <div className="p-6 border-t bg-gray-50 space-y-4">
+            <div className="p-6 border-t bg-white/50 backdrop-blur-sm space-y-4">
               <div className="flex items-center justify-between text-lg font-bold text-[#243A5E]">
                 <span>Итого:</span>
                 <span>{total().toLocaleString()} UZS</span>
@@ -154,7 +157,8 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
                 </button>
               </div>
             </div>
-          )}        </motion.div>
+          )}
+        </motion.div>
       </div>
     </AnimatePresence>
   );

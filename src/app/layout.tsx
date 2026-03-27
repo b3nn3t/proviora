@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Инновационные БАДы и уходовая косметика премиум-класса",
 };
 
+import ToastContainer from "@/components/ui/ToastContainer";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,6 +21,7 @@ export default function RootLayout({
     <html lang="ru" className="scroll-smooth">
       <body className={`${inter.variable} ${playfair.variable} antialiased bg-[#243A5E] text-white`}>
         {children}
+        <ToastContainer />
       </body>
     </html>
   );
