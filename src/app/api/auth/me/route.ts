@@ -3,10 +3,11 @@ import db from '@/lib/db';
 import { jwtVerify } from 'jose';
 const SECRET_KEY = new TextEncoder().encode('proviora-secret-key-2024');
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const token = request.headers.get('cookie')?.split('auth-token=')[1]?.split(';')[0];
-
     if (!token) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
     }

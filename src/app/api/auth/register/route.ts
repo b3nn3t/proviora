@@ -5,10 +5,11 @@ import { SignJWT } from 'jose';
 
 const SECRET_KEY = new TextEncoder().encode('proviora-secret-key-2024');
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, password, name } = body;
+    const body = await request.json();    const { email, password, name } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Заполните все поля' }, { status: 400 });
