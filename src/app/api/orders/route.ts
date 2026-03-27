@@ -56,6 +56,7 @@ export async function GET(request: Request) {
     return NextResponse.json(orders.map((o: any) => ({
       ...o,
       items: JSON.parse(o.items)
-    })));  } catch (error: any) {    return NextResponse.json({ error: 'Ошибка сервера: ' + error.message }, { status: 500 });
+    })));  } catch (error: any) {
+    return NextResponse.json({ error: 'Ошибка сервера: ' + error.message }, { status: 500 });
   }
 }
