@@ -9,9 +9,9 @@ import Header from "@/components/sections/Header";
 export default function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
+  const [activeModal, setActiveModal] = useState<"about" | "contacts" | "auth" | null>(null);
   
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
+  const { scrollYProgress } = useScroll({    target: containerRef,
     offset: ["start start", "end start"],
   });
 
@@ -94,7 +94,7 @@ export default function Hero() {
       </motion.div>
 
       {/* Header appears after transition */}
-      {showContent && <Header />}
+      {showContent && <Header activeModal={activeModal} setActiveModal={setActiveModal} />}
     </section>
   );
 }
