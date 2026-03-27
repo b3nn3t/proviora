@@ -20,10 +20,11 @@ async function checkAdmin(request: Request) {
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const users = await db.user.findMany({
-    select: {
+  const users = await db.user.findMany({    select: {
       id: true,
       name: true,
       email: true,

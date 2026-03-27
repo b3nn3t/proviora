@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
-    const products = await db.product.findMany({
-      orderBy: { createdAt: 'desc' }
+    const products = await db.product.findMany({      orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(products);
   } catch (error) {    console.error('Fetch products error:', error);
