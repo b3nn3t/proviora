@@ -44,16 +44,17 @@ export default function Header({ activeModal, setActiveModal }: { activeModal: "
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch("/api/auth/login", {
+      const endpoint = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           email: formData.email, 
           password: formData.password,
+          name: formData.name,
           rememberMe 
         }),
-      });
-      const data = await res.json();
+      });      const data = await res.json();
       if (res.ok) {
         setUser(data.user);
         setActiveModal(null);

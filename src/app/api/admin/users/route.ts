@@ -10,7 +10,10 @@ async function checkAdmin(request: Request) {
     const token = cookieStore?.split('auth-token=')[1]?.split(';')[0];
     if (!token) return false;
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    const user = db.prepare('SELECT role FROM users WHERE id = ?').get(payload.userId) as any;
+    const user = await db.user.findUnique({
+      where: { id: payload.userId as number },
+      select: { role: true }
+    });
     return user?.role === 'admin';
   } catch (e) {
     return false;
@@ -19,13 +22,25 @@ async function checkAdmin(request: Request) {
 
 export async function GET(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const users = db.prepare('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC').all();
+  const users = await db.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
   return NextResponse.json(users);
 }
 
 export async function PATCH(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const { id, role } = await request.json();
-  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id);
+  await db.user.update({
+    where: { id: parseInt(id) },
+    data: { role }
+  });
   return NextResponse.json({ success: true });
 }

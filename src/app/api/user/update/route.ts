@@ -16,10 +16,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Имя слишком короткое' }, { status: 400 });
     }
 
-    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, payload.userId);
+    await db.user.update({
+      where: { id: payload.userId as number },
+      data: { name }
+    });
 
-    return NextResponse.json({ success: true, name });
-  } catch (error) {
+    return NextResponse.json({ success: true, name });  } catch (error) {
     return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
   }
 }
