@@ -11,7 +11,10 @@ async function checkAdmin(request: Request) {
     if (!token) return false;
     const { payload } = await jwtVerify(token, SECRET_KEY);
     if (payload.role === 'admin') return true;
-    const user = db.prepare('SELECT role FROM users WHERE id = ?').get(payload.userId) as any;
+    const user = await db.user.findUnique({
+      where: { id: payload.userId as number },
+      select: { role: true }
+    });
     return user?.role === 'admin';
   } catch (e) {
     return false;
@@ -21,15 +24,24 @@ async function checkAdmin(request: Request) {
 export async function GET(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   
-  const orders = db.prepare(`
-    SELECT orders.*, users.name as user_name, users.email as user_email 
-    FROM orders 
-    JOIN users ON orders.user_id = users.id 
-    ORDER BY orders.created_at DESC
-  `).all();
+  const orders = await db.order.findMany({
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
   
   return NextResponse.json(orders.map((o: any) => ({
     ...o,
+    user_name: o.user.name,
+    user_email: o.user.email,
     items: JSON.parse(o.items)
   })));
 }
@@ -39,7 +51,10 @@ export async function PATCH(request: Request) {
   
   try {
     const { id, status } = await request.json();
-    db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
+    await db.order.update({
+      where: { id: parseInt(id) },
+      data: { status }
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
