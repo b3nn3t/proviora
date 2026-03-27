@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, Suspense } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Float, PerspectiveCamera, Environment, useGLTF, Center } from "@react-three/drei";
+import { Float, PerspectiveCamera, useGLTF, Center } from "@react-three/drei";
 import * as THREE from "three";
 
 interface TextSceneProps {
@@ -21,11 +21,9 @@ function LogoContent({ scrollProgress }: { scrollProgress: number }) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF("/models/logo.glb");
 
-  // Настройка материалов модели для премиального вида
   useMemo(() => {
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        // Сохраняем оригинальный материал модели, но добавляем ему свойства для объема
         if (child.material) {
           child.material.metalness = 0.8;
           child.material.roughness = 0.2;
@@ -39,17 +37,12 @@ function LogoContent({ scrollProgress }: { scrollProgress: number }) {
   }, [scene]);
 
   useFrame((state) => {
-    // Камера влетает ВНУТРЬ 3D логотипа
     const zPos = THREE.MathUtils.lerp(10, -20, scrollProgress);
     state.camera.position.z = zPos;
     
-    // Поворачиваем саму группу под углом 45 градусов, чтобы ВСЕГДА видеть объем
     if (groupRef.current) {
-      // Базовый наклон в 45 градусов по Y и 20 по X
       groupRef.current.rotation.y = (Math.PI / 4) + Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
       groupRef.current.rotation.x = (Math.PI / 8) + Math.cos(state.clock.elapsedTime * 0.3) * 0.1;
-      
-      // Дополнительный доворот при скролле
       groupRef.current.rotation.y += scrollProgress * Math.PI;
 
       const opacity = 1 - Math.pow(scrollProgress, 1.5);
@@ -66,7 +59,6 @@ function LogoContent({ scrollProgress }: { scrollProgress: number }) {
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={45} />
       <ambientLight intensity={0.5} />
-      {/* Добавляем боковой свет, чтобы подчеркнуть грани и объем */}
       <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={3} color="#ffffff" />
       <pointLight position={[-10, 5, 5]} intensity={2} color="#d4af37" />
       <pointLight position={[0, -5, 5]} intensity={1} color="#ffffff" />
@@ -77,17 +69,14 @@ function LogoContent({ scrollProgress }: { scrollProgress: number }) {
             <primitive object={scene} scale={3} />
           </Center>
         </Float>
-
         <Particles count={500} />
       </group>
-
-      <Environment preset="studio" />
     </>
   );
 }
 
 function Particles({ count }: { count: number }) {
-  const points = useMemo(() => {
+  const particles = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       p[i * 3] = (Math.random() - 0.5) * 40;
@@ -102,9 +91,10 @@ function Particles({ count }: { count: number }) {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={count}
-          array={points}
+          count={particles.length / 3}
+          array={particles}
           itemSize={3}
+          args={[particles, 3]}
         />
       </bufferGeometry>
       <pointsMaterial 
@@ -116,7 +106,6 @@ function Particles({ count }: { count: number }) {
         blending={THREE.AdditiveBlending}
       />
     </points>
-  );
-}
+  );}
 
 useGLTF.preload("/models/logo.glb");

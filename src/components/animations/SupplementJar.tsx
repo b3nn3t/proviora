@@ -80,9 +80,9 @@ function Particles({ count }: { count: number }) {
           count={particles.length / 3}
           array={particles}
           itemSize={3}
+          args={[particles, 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.02} color="#d4af37" transparent opacity={0.6} sizeAttenuation />
     </points>
-  );
-}
+  );}
