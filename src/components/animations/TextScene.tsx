@@ -89,15 +89,14 @@ function Particles({ count }: { count: number }) {
   return (
     <points>
       <bufferGeometry>
+        {/* @ts-ignore */}
         <bufferAttribute
           attach="attributes-position"
           count={particles.length / 3}
           array={particles}
           itemSize={3}
-          args={[particles, 3]}
         />
-      </bufferGeometry>
-      <pointsMaterial 
+      </bufferGeometry>      <pointsMaterial 
         size={0.08} 
         color="#d4af37" 
         transparent 
