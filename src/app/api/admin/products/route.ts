@@ -23,10 +23,11 @@ async function checkAdmin(request: Request) {
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const products = await db.product.findMany({
-    orderBy: { createdAt: 'desc' }
+  const products = await db.product.findMany({    orderBy: { createdAt: 'desc' }
   });
   return NextResponse.json(products);
 }
