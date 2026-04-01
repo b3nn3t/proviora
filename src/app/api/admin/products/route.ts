@@ -1,125 +1,60 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { jwtVerify } from 'jose';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-
-const SECRET_KEY = new TextEncoder().encode('proviora-secret-key-2024');
-
-async function checkAdmin(request: Request) {
-  try {
-    const cookieStore = request.headers.get('cookie');
-    const token = cookieStore?.split('auth-token=')[1]?.split(';')[0];
-    if (!token) return false;
-    const { payload } = await jwtVerify(token, SECRET_KEY);
-    if (payload.role === 'admin') return true;
-    const user = await db.user.findUnique({
-      where: { id: payload.userId as number },
-      select: { role: true }
-    });
-    return user?.role === 'admin';
-  } catch (e) {
-    return false;
-  }
-}
+import { prisma } from '@/lib/db';
+import { writeFile } from "fs/promises";
+import { v4 as uuidv4 } from "uuid";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const products = await db.product.findMany({    orderBy: { createdAt: 'desc' }
-  });
-  return NextResponse.json(products);
+// Получить товары
+export async function GET() {
+  try {
+    const products = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return NextResponse.json(products);
+  } catch (error) {
+    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
+  }
 }
 
+// Добавить товар
 export async function POST(request: Request) {
-  if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   try {
     const formData = await request.formData();
-    const name = formData.get('name') as string;
-    const price = formData.get('price') as string;
-    const category = formData.get('category') as string;
-    const is_bestseller = formData.get('is_bestseller') === '1' ? 1 : 0;
-    const description = formData.get('description') as string;
-    const stock = parseInt(formData.get('stock') as string) || 0;
-    const image = formData.get('image') as File | null;
 
-    let imageUrl = null;
-    if (image && image.size > 0) {
-      const bytes = await image.arrayBuffer();
+    const file = formData.get("image") as File;
+
+    let fileName = "";
+
+    if (file && file.size > 0) {
+      const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const filename = `${Date.now()}-${image.name.replace(/\s+/g, '-')}`;
-      const uploadPath = path.join(process.cwd(), 'public', 'uploads', filename);
-      await writeFile(uploadPath, buffer);
-      imageUrl = `/uploads/${filename}`;
+
+      const safeName = file.name.replace(/\s+/g, "-");
+      fileName = `${uuidv4()}-${safeName}`;
+
+      await writeFile(`./public/products/${fileName}`, buffer);
     }
 
-    await db.product.create({
+    const rawPrice = String(formData.get("price") || "");
+    const price = Number(rawPrice.replace(/[^0-9]/g, ""));
+
+    const product = await prisma.product.create({
       data: {
-        name,
+        name: String(formData.get("name") || ""),
+        description: String(formData.get("description") || ""),
         price,
-        category,
-        isBestseller: is_bestseller,
-        description,
-        imageUrl,
-        stock
+        category: String(formData.get("category") || ""),
+        stock: Number(formData.get("stock") || 0),
+        isBestseller: formData.get("isBestseller") ? 1 : 0,
+        image: fileName ? `/products/${fileName}` : ""
       }
     });
-    return NextResponse.json({ success: true });  } catch (error) {
-    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("UPLOAD ERROR:", error);
+    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
-}
-
-export async function PATCH(request: Request) {
-  if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  try {
-    const formData = await request.formData();
-    const id = parseInt(formData.get('id') as string);
-    const name = formData.get('name') as string;
-    const price = formData.get('price') as string;
-    const category = formData.get('category') as string;
-    const is_bestseller = formData.get('is_bestseller') === '1' ? 1 : 0;
-    const description = formData.get('description') as string;
-    const stock = parseInt(formData.get('stock') as string) || 0;
-    const image = formData.get('image') as File | null;
-
-    const currentProduct = await db.product.findUnique({
-      where: { id },
-      select: { imageUrl: true }
-    });
-    let imageUrl = currentProduct?.imageUrl;
-
-    if (image && image.size > 0) {
-      const bytes = await image.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const filename = `${Date.now()}-${image.name.replace(/\s+/g, '-')}`;
-      const uploadPath = path.join(process.cwd(), 'public', 'uploads', filename);
-      await writeFile(uploadPath, buffer);
-      imageUrl = `/uploads/${filename}`;
-    }
-
-    await db.product.update({
-      where: { id },
-      data: {
-        name,
-        price,
-        category,
-        isBestseller: is_bestseller,
-        description,
-        imageUrl,
-        stock
-      }
-    });
-    return NextResponse.json({ success: true });  } catch (error) {
-    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  if (!await checkAdmin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const { id } = await request.json();
-  await db.product.delete({
-    where: { id: parseInt(id) }
-  });
-  return NextResponse.json({ success: true });
 }

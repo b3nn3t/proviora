@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { jwtVerify } from 'jose';
 
 const SECRET_KEY = new TextEncoder().encode('proviora-secret-key-2024');
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Имя слишком короткое' }, { status: 400 });
     }
 
-    await db.user.update({
+    await prisma.user.update({
       where: { id: payload.userId as number },
       data: { name }
     });

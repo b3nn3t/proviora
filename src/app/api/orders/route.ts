@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { jwtVerify } from 'jose';
 
 const SECRET_KEY = new TextEncoder().encode('proviora-secret-key-2024');
@@ -14,10 +14,10 @@ export async function POST(request: Request) {
 
     // Проверка наличия на складе перед оформлением
     for (const item of items) {
-      const product = await db.product.findUnique({
-        where: { id: item.id },
-        select: { stock: true, name: true }
-      });
+      const product = await prisma.product.findUnique({
+  where: { id: item.id },
+  select: { stock: true, name: true }
+});
       if (!product || product.stock < item.quantity) {
         return NextResponse.json({ error: `Недостаточно товара "${product?.name || 'Неизвестно'}" на складе` }, { status: 400 });
       }
@@ -25,13 +25,13 @@ export async function POST(request: Request) {
 
     // Уменьшение количества на складе
     for (const item of items) {
-      await db.product.update({
+      await prisma.product.update({
         where: { id: item.id },
         data: { stock: { decrement: item.quantity } }
       });
     }
 
-    await db.order.create({
+    await prisma.order.create({
       data: {
         userId: payload.userId as number,
         totalPrice: total_price,
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     if (!token) return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
     const { payload } = await jwtVerify(token, SECRET_KEY);
     const userId = payload.userId as number;
-    const orders = await db.order.findMany({
+    const orders = await prisma.order.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' }
     });

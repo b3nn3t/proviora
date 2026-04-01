@@ -1,13 +1,14 @@
 "use client";
 
+import { formatPrice } from "@/lib/formatPrice";
 import { motion } from "framer-motion";
 import { Filter, ChevronDown, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/store/useCart";
+import { useToast } from "@/lib/store/useToast";
 
 const categories = ["Все товары", "Уход за кожей", "Витамины/Нутриенты", "Наборы"];
 
-import { useToast } from "@/lib/store/useToast";
 
 export default function CatalogGrid() {
   const [products, setProducts] = useState<any[]>([]);
@@ -33,10 +34,17 @@ export default function CatalogGrid() {
     fetchProducts();
   }, []);
 
-  const parsePrice = (priceStr: string) => {
-    if (!priceStr) return 0;
-    return parseInt(priceStr.replace(/[^0-9]/g, "")) || 0;
-  };
+  const parsePrice = (price: any) => {
+  if (!price) return 0;
+
+  if (typeof price === "number") return price;
+
+  if (typeof price === "string") {
+    return parseInt(price.replace(/[^0-9]/g, "")) || 0;
+  }
+
+  return 0;
+};
 
   const filteredProducts = products.filter((p) => {
     const matchesCategory = selectedCategory === "Все товары" || p.category === selectedCategory;
@@ -139,17 +147,17 @@ export default function CatalogGrid() {
                       className="group flex flex-col"
                     >
                       <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4">
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt={product.name} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-6xl font-playfair">
-                            {product.name ? product.name[0] : "?"}
-                          </div>
-                        )}
+                    {product.image ? (
+  <img
+    src={`http://localhost:3000${product.image}`}
+    alt={product.name}
+    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+  />
+) : (
+  <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-6xl font-playfair">
+    {product.name ? product.name[0] : "?"}
+  </div>
+)}
                         <button 
                           onClick={() => {
                             addItem(product);
@@ -175,7 +183,7 @@ export default function CatalogGrid() {
                           {product.name}
                         </h3>
                         <p className="text-xs text-gray-400">{product.category}</p>
-                        <p className="font-bold mt-2">{product.price}</p>
+                        <p className="font-bold mt-2">{formatPrice(product.price)}</p>
                       </div>                      
                       <button 
                         onClick={() => {

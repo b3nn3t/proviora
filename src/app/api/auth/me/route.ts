@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { jwtVerify } from 'jose';
 const SECRET_KEY = new TextEncoder().encode('proviora-secret-key-2024');
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     }
 
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: payload.userId as number },
       select: { id: true, name: true, email: true, role: true }
     });
